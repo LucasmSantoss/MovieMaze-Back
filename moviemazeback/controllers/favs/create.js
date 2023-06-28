@@ -1,29 +1,35 @@
-import  Reaction  from '../../models/Reaction.js'
+import Movie from "../models/Movie";
+import axios from "axios";
 
 const controller = {
-    create: async (req, res, next) => {
-        try {
-            req.body.user_id = req.user.id
+  create: async (req, res, next) => {
+    try {
+      const { movieId } = req.body;
 
-            let reaction = await Reaction.find(req.body)
-            if(reaction.length){
-                await Reaction.findOneAndDelete(req.body)
-                return res.status(200).json({
-                    success: true,
-                    message: "Reaction deleted"
-                })
-            }else{
-                await Reaction.create(req.body)
-                return res.status(200).json({
-                    success: true,
-                    message: "Reaction added"
-                })
-            }
-        } catch (error) {
-            next(error)
-        }
+      // Realizar solicitud a la API de IMDb para obtener los detalles de la película
+      const response = await axios.get(`https://api.imdb.com/movies/${movieId}`);
 
+      // Obtener los datos de la película de la respuesta de la API
+      const movieData = response.data;
+
+      // Crear una instancia del modelo Movie con los datos de la película
+      const movie = new Movie({
+        title: movieData.title,
+        releaseYear: movieData.releaseYear,
+        // Ajusta los campos y valores según la estructura de tu modelo Movie
+      });
+
+      // Guardar la película en la base de datos
+      await movie.save();
+
+      return res.status(200).json({
+        success: true,
+        message: "Movie added to favorites",
+      });
+    } catch (error) {
+      next(error);
     }
-}
+  },
+};
 
-export default controller
+export default controller;
